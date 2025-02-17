@@ -1,5 +1,6 @@
 String inputString = "";      // a String to hold incoming data
 String outputString = "";
+String checksum = "";
 int indexx;
 bool stringComplete = false;  // whether the string is complete
 
@@ -8,6 +9,19 @@ void setup() {
   Serial.begin(9600);
   // reserve 200 bytes for the inputString:
   inputString.reserve(200);
+}
+
+String calcChecksum(String data) {
+  byte checksum = 0;
+
+  for (int i = 0; i < data.length(); i++) {
+    checksum ^= data[i];
+  }
+
+  char hexString[3];
+  sprintf(hexString, "%02X", checksum);
+
+  return String(hexString);
 }
 
 void loop() {
@@ -27,6 +41,10 @@ void loop() {
       //append the rest of the inputString to the outputString
       outputString.concat(inputString.substring(indexx));
       //put the outputString onto the serial connection
+      checksum = calcChecksum(outputString);
+      outputString.remove(outputString.indexOf('*'));
+      outputString.concat('*');
+      outputString.concat(checksum);
       outputString.concat("\r\n");
       Serial.print(outputString);      
     }
@@ -34,6 +52,7 @@ void loop() {
       inputString.concat("\r\n");
       Serial.print(inputString);
     }
+    
     // clear the string:
     inputString = "";
     stringComplete = false;
