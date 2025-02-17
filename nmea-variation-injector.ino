@@ -24,24 +24,24 @@ void setup() {
  * received $GPRMC sentence and is not safe to use if the value is already set.
  *
  * @param args
- * const String &data:  The part of the NMEA 0183 sentence of which the checksum shall be calculated.
- * String &result:      The String to write the checksum into.
+ * const String& input: The part of the NMEA 0183 sentence of which the checksum shall be calculated.
+ * String& result:      The String to write the checksum into.
  *
  * @param returns
  * nothing
  *
  */
-void calcChecksum(const String &data, String &result) {
-  byte checksum = 0;
+void calcChecksum(const String& input, String& result) {
+  byte checksum = byte(input.charAt(0));
 
-  for (int i = 0; i < data.length(); i++) {
-    checksum ^= data[i];
+  for (int i = 1; i < input.length(); i++) {
+    checksum ^= byte(input.charAt(i));
   }
 
   char hexString[3];
   sprintf(hexString, "%02X", checksum);
 
-  result = hexString;
+  result = String(hexString);
 }
 
 /*
