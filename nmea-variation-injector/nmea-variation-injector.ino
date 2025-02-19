@@ -65,7 +65,6 @@ void calcChecksum(const String& input, String& result) {
 void loop() {
   if (stringComplete) {
     if (inputString.startsWith("$GPRMC")) {
-      Serial.println(inputString);
       //scroll to the 10th comma
       indexx = 0;
       for (int i = 0; i < 10; i++) {
@@ -78,7 +77,8 @@ void loop() {
       //add checksum
       calcChecksum(inputString, checksum);
       inputString.concat(checksum);
-      inputString.concat("\r\n");   
+      inputString.concat("\r\n");
+      Serial.print(inputString);
     }
     else {
       inputString.concat("\r\n");
