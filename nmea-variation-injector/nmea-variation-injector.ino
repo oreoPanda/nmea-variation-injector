@@ -3,6 +3,8 @@ String checksum = "";
 int indexx;
 bool stringComplete = false;  // whether the string is complete
 
+#define DEBUG
+
 void setup() {
   // initialize serial:
   Serial.begin(9600);
@@ -65,6 +67,9 @@ void calcChecksum(const String& input, String& result) {
 void loop() {
   if (stringComplete) {
     if (inputString.startsWith("$GPRMC")) {
+#ifdef DEBUG
+      Serial.println(String("Found $GPRMC string: ") += inputString);
+#endif
       //scroll to the 10th comma
       indexx = 0;
       for (int i = 0; i < 10; i++) {
@@ -81,6 +86,9 @@ void loop() {
       Serial.print(inputString);
     }
     else {
+#ifdef DEBUG
+      Serial.println("Other NMEA sentence");
+#endif      
       inputString.concat("\r\n");
       Serial.print(inputString);
     }
@@ -114,7 +122,10 @@ void serialEvent() {
     inputString += inChar;
     // if the incoming character is a newline, set a flag so the main loop can
     // do something about it:    
-    if (inChar == '\n') {      
+    if (inChar == '\n') {
+#ifdef DEBUG
+      Serial.println("Found newline");
+#endif
       stringComplete = true;
       inputString.trim();
     }
