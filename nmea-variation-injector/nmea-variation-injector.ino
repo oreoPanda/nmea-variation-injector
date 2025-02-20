@@ -3,7 +3,7 @@ String checksum = "";
 int indexx;
 bool stringComplete = false;  // whether the string is complete
 
-#define DEBUG
+//#define DEBUG
 
 void setup() {
   // initialize serial:
@@ -34,11 +34,15 @@ void setup() {
  *
  */
 void calcChecksum(const String& input, String& result) {
-  byte checksum = byte(input.charAt(0));
+  byte checksum = byte(input.charAt(1));
+  //Serial.print(input.charAt(1));
 
-  for (int i = 1; i < input.length(); i++) {
+  for (unsigned int i = 2; i < input.length()-1; i++) {
+    //Serial.print(input.charAt(i));
     checksum ^= byte(input.charAt(i));
   }
+  
+  //Serial.println(" ");
 
   char hexString[3];
   sprintf(hexString, "%02X", checksum);
