@@ -1,6 +1,8 @@
-String inputString = "";      // a String to hold incoming data
-String checksum = "";
-int indexx;
+#include <string.h>
+
+char inputString[100] = "\0";   // string to hold an NMEA sentence
+char checkstr[3] = "\0";        // string to hold the checksum
+int recv_index = 0;
 bool stringComplete = false;  // whether the string is complete
 
 //#define DEBUG
@@ -8,9 +10,6 @@ bool stringComplete = false;  // whether the string is complete
 void setup() {
   // initialize serial:
   Serial.begin(9600);
-  // reserve sufficient bytes for the strings:
-  checksum.reserve(10);
-  inputString.reserve(300);
 }
 
 
@@ -33,21 +32,19 @@ void setup() {
  * nothing
  *
  */
-void calcChecksum(const String& input, String& result) {
-  byte checksum = byte(input.charAt(1));
+void calcChecksum(const char *input, char *result) {
+  byte checksum = byte(input[1]);
   //Serial.print(input.charAt(1));
 
-  for (unsigned int i = 2; i < input.length()-1; i++) {
+  for (unsigned int i = 2; i < strlen(input)-1; i++) {
     //Serial.print(input.charAt(i));
-    checksum ^= byte(input.charAt(i));
+    checksum ^= byte(input[i]);
   }
   
   //Serial.println(" ");
 
-  char hexString[3];
-  sprintf(hexString, "%02X", checksum);
+  sprintf(result, "%02X", checksum);
 
-  result = String(hexString);
 }
 
 /*
@@ -70,35 +67,36 @@ void calcChecksum(const String& input, String& result) {
  */
 void loop() {
   if (stringComplete) {
-    if (inputString.startsWith("$GPRMC")) {
-#ifdef DEBUG
-      Serial.println(String("Found $GPRMC string: ") += inputString);
-#endif
+    if (strstr(inputString, "$GPRMC")) {
       //scroll to the 10th comma
-      indexx = 0;
+      char *p = inputString;
       for (int i = 0; i < 10; i++) {
-        indexx = inputString.indexOf(',', indexx+1);    //TODO handle the -1 as error
+        if (!(p = strchr(p+1, ','))) {
+          break;    //stop scrolling if there are less than 10 commas
+        }
       }
-      //we now have the index of the 10th comma stored in the variable called index. Remove everything after the 10th comma:
-      inputString.remove(indexx+1);
-      //add magnetic variation
-      inputString.concat("1.0,E*");           //WEIRD commenting this line prevents missing characters in the output
-      //add checksum
-      calcChecksum(inputString, checksum);
-      inputString.concat(checksum);
-      inputString.concat("\r\n");
-      Serial.print(inputString);
+      if (p) {        //only if 10th comma found
+        //set the character after the 10th comma as end of the string
+        *(p+1) = '\0';
+        //add magnetic variation
+        strcat(inputString, "1.0,E*");    //WEIRD: Leave out this line and everything works.... WHY??
+        //add checksum
+        calcChecksum(inputString, checkstr);
+        strcat(inputString, checkstr);  //WEIRD: Leave out this line and shortdata looks ok, but data not
+        strcat(inputString, "\r\n");
+      }
+      Serial.write(inputString);
     }
-    else {
-#ifdef DEBUG
-      Serial.println("Other NMEA sentence");
-#endif
-      inputString.concat("\r\n");
-      Serial.print(inputString);
+    else {    
+      //inputString.concat("\r\n");
+      Serial.write(inputString);
     }
     
     // clear the string:
-    inputString = "";
+#ifdef DEBUG
+    Serial.println("Clearing...");
+#endif
+    inputString[0] = '\0';
     stringComplete = false;
   }
 }
@@ -119,19 +117,20 @@ void loop() {
  * nothing
  */
 void serialEvent() {
-  while (Serial.available() && stringComplete == false) {    
+  while (Serial.available() && !stringComplete) {
+    if (recv_index >= 100) {
+      break;
+    }
     // get the new byte:
     char inChar = (char)Serial.read();
     // add it to the inputString:
-    inputString += inChar;
-    // if the incoming character is a newline, set a flag so the main loop can
-    // do something about it:    
+    inputString[recv_index++] = inChar;
+    // if the incoming character is a newline, set stringComplete
     if (inChar == '\n') {
-#ifdef DEBUG
-      Serial.println("Found newline");
-#endif
+      inputString[recv_index] = '\0';
       stringComplete = true;
-      inputString.trim();
+      recv_index = 0;
+      //inputString.trim();
       break;
     }
   }
