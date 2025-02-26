@@ -82,7 +82,7 @@ void loop() {
       //we now have the index of the 10th comma stored in the variable called index. Remove everything after the 10th comma:
       inputString.remove(indexx+1);
       //add magnetic variation
-      inputString.concat("1.0,E*");
+      inputString.concat("1.0,E*");           //WEIRD commenting this line prevents missing characters in the output
       //add checksum
       calcChecksum(inputString, checksum);
       inputString.concat(checksum);
@@ -92,7 +92,7 @@ void loop() {
     else {
 #ifdef DEBUG
       Serial.println("Other NMEA sentence");
-#endif      
+#endif
       inputString.concat("\r\n");
       Serial.print(inputString);
     }
@@ -119,7 +119,7 @@ void loop() {
  * nothing
  */
 void serialEvent() {
-  while (Serial.available()) {    
+  while (Serial.available() && stringComplete == false) {    
     // get the new byte:
     char inChar = (char)Serial.read();
     // add it to the inputString:
@@ -132,6 +132,7 @@ void serialEvent() {
 #endif
       stringComplete = true;
       inputString.trim();
+      break;
     }
   }
 }
